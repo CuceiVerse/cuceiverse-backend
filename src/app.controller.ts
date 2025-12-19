@@ -19,12 +19,16 @@ export class AppController {
       };
     } catch (e: any) {
       const isProd = process.env.NODE_ENV === 'production';
+
+      // Solo señal diagnóstica segura (sin credenciales / sin stack) para producción
+      const dbErrorCode = e?.code ?? e?.name ?? 'unknown';
+
       return {
         status: 'degraded',
         service: 'cuceiverse-backend',
         db: 'disconnected',
         timestamp,
-        ...(isProd ? {} : { error: String(e?.message ?? e) }),
+        ...(isProd ? { dbErrorCode } : { error: String(e?.message ?? e), dbErrorCode }),
       };
     }
   }
