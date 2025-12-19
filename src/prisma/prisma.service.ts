@@ -17,18 +17,19 @@ export class PrismaService
     }
 
     // Supabase + node-postgres: fuerza SSL en prod (evita fallos de cadena/verify).
-    const ssl =
-      process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : undefined;
+ const ssl =
+  process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false }
+    : undefined;
 
-    const pool = new Pool({
-      connectionString,
-      ssl,
-      max: Number(process.env.DB_POOL_MAX ?? 5),
-      idleTimeoutMillis: 10_000,
-      connectionTimeoutMillis: 5_000,
-    });
+const pool = new Pool({
+  connectionString,
+  ssl,
+  max: Number(process.env.DB_POOL_MAX ?? 5),
+  idleTimeoutMillis: 10_000,
+  connectionTimeoutMillis: 5_000,
+});
+
 
     super({
       adapter: new PrismaPg(pool),
