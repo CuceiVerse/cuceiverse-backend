@@ -2,6 +2,20 @@
 /dist
 /node_modules
 /build
+dist/
+node_modules/
+*.tsbuildinfo
+node_modules/
+dist/
+generated/
+src/generated/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
 
 # Logs
 logs
@@ -59,3 +73,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .env
 .env.*
 !.env.example
+
+/generated/prisma
