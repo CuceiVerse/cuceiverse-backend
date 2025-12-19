@@ -18,20 +18,31 @@ export class AppController {
         timestamp,
       };
     } catch (e: any) {
-      const isProd = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production';
 
-      // Solo señal diagnóstica segura (sin credenciales / sin stack) para producción
-      const dbErrorCode = e?.code ?? e?.name ?? 'unknown';
+  const dbErrorCode =
+    e?.code ??
+    e?.errno ??
+    e?.name ??
+    (typeof e === 'object' ? 'unknown_error_object' : 'unknown_error');
 
-      return {
-        status: 'degraded',
-        service: 'cuceiverse-backend',
-        db: 'disconnected',
-        timestamp,
-        ...(isProd ? { dbErrorCode } : { error: String(e?.message ?? e), dbErrorCode }),
-      };
-    }
-  }
+  const dbErrorHint =
+    e?.reason ||
+    e?.syscall ||
+    e?.severity ||
+    e?.routine ||
+    undefined;
+
+  return {
+    status: 'degraded',
+    service: 'cuceiverse-backend',
+    db: 'disconnected',
+    timestamp,
+    ...(isProd
+      ? { dbErrorCode, ...(dbErrorHint ? { dbErrorHint } : {}) }
+      : { error: String(e?.message ?? e), dbErrorCode, ...(dbErrorHint ? { dbErrorHint } : {}) }),
+  };
+}}
 
   @Get()
   root() {
