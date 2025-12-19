@@ -24,11 +24,12 @@ export class PrismaService
 
 const pool = new Pool({
   connectionString,
-  ssl,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   max: Number(process.env.DB_POOL_MAX ?? 5),
   idleTimeoutMillis: 10_000,
-  connectionTimeoutMillis: 5_000,
+  connectionTimeoutMillis: 10_000,
 });
+
 
 
     super({
