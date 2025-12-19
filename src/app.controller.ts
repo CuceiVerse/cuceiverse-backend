@@ -10,7 +10,7 @@ export class AppController {
     const timestamp = new Date().toISOString();
 
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+await this.prisma.ping();
       return {
         status: 'ok',
         service: 'cuceiverse-backend',

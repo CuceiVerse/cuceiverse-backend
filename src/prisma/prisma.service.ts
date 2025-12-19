@@ -43,3 +43,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.pool.end();
   }
 }
+
+async ping(): Promise<void> {
+  await this.pool.query('SELECT 1');
+}
