@@ -9,7 +9,13 @@
     "prebuild": "prisma generate",
     "build": "nest build && npm run copy:generated",
     "copy:generated": "cpy \"src/generated/**/*\" \"dist/generated\" --parents",
-    "start:prod": "node dist/main.js"
+    "start:prod": "node dist/main.js",
+    "start": "nest start",
+    "start:dev": "nest start --watch --watchAssets",
+    "start:debug": "nest start --debug --watch",
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "test": "jest",
+    "dev": "prisma generate && npm run copy:generated && npm run start:dev"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -38,6 +44,7 @@
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
     "jest": "^30.0.0",
+    "nodemon": "^3.1.11",
     "prettier": "^3.4.2",
     "prisma": "^7.2.0",
     "source-map-support": "^0.5.21",
