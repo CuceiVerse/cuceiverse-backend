@@ -15,7 +15,10 @@
     "start:debug": "nest start --debug --watch",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest",
-    "dev": "prisma generate && npm run copy:generated && npm run start:dev"
+    "dev": "prisma generate && npm run copy:generated && npm run start:dev",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
