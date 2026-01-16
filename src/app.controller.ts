@@ -1,56 +1,32 @@
 import { Controller, Get } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 
-type HealthOk = {
-  status: 'ok';
-  service: 'cuceiverse-backend';
-  db: 'connected';
-  timestamp: string;
-  release?: string;
-};
+type UnknownRecord = Record<string, unknown>;
 
-type HealthDegraded = {
-  status: 'degraded';
-  service: 'cuceiverse-backend';
-  db: 'disconnected';
-  timestamp: string;
-  release?: string;
-  dbErrorCode: string;
-  dbErrorHint?: string;
-  dbErrorMessage?: string;
-  error?: string;
-};
-
-type HealthResponse = HealthOk | HealthDegraded;
-
-function redactSecrets(input: string): string {
+function redactSecrets(input: unknown): string {
+  const s = typeof input === 'string' ? input : String(input);
   // Redacta posibles URIs tipo postgresql://user:pass@host/db
-  return input.replace(/(postgres(?:ql)?:\/\/)([^@\s]+)@/gi, '$1***@');
+  return s.replace(/(postgres(?:ql)?:\/\/)([^@\s]+)@/gi, '$1***@');
 }
 
-function toRecord(err: unknown): Record<string, unknown> | null {
-  return typeof err === 'object' && err !== null
-    ? (err as Record<string, unknown>)
-    : null;
+function isRecord(v: unknown): v is UnknownRecord {
+  return typeof v === 'object' && v !== null;
 }
 
-function pickString(
-  rec: Record<string, unknown> | null,
-  key: string,
-): string | undefined {
-  const v = rec?.[key];
-  return typeof v === 'string' && v.length > 0 ? v : undefined;
+function getStringProp(r: UnknownRecord, key: string): string | undefined {
+  const v = r[key];
+  return typeof v === 'string' ? v : undefined;
 }
 
-function safeMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
+function getNumberProp(r: UnknownRecord, key: string): number | undefined {
+  const v = r[key];
+  return typeof v === 'number' ? v : undefined;
+}
 
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return 'Unknown error';
-  }
+function toSafeMessage(e: unknown): string {
+  if (typeof e === 'string') return e;
+  if (e instanceof Error) return e.message;
+  return String(e);
 }
 
 @Controller()
@@ -58,10 +34,9 @@ export class AppController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get('health')
-  async health(): Promise<HealthResponse> {
+  async health() {
     const timestamp = new Date().toISOString();
     const isProd = process.env.NODE_ENV === 'production';
-    const release = process.env.RENDER_GIT_COMMIT?.slice(0, 7);
 
     try {
       await this.prisma.ping();
@@ -71,24 +46,28 @@ export class AppController {
         service: 'cuceiverse-backend',
         db: 'connected',
         timestamp,
-        ...(release ? { release } : {}),
+        release: process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? undefined,
       };
-    } catch (err: unknown) {
-      const rec = toRecord(err);
+    } catch (e: unknown) {
+      const r: UnknownRecord = isRecord(e) ? e : {};
 
-      const dbErrorCode =
-        pickString(rec, 'code') ??
-        pickString(rec, 'errno') ??
-        pickString(rec, 'name') ??
+      const codeStr = getStringProp(r, 'code');
+      const errnoNum = getNumberProp(r, 'errno');
+      const nameStr = getStringProp(r, 'name');
+
+      const dbErrorCode: string =
+        codeStr ??
+        (errnoNum != null ? String(errnoNum) : undefined) ??
+        nameStr ??
         'unknown';
 
-      const dbErrorHint =
-        pickString(rec, 'syscall') ??
-        pickString(rec, 'reason') ??
-        pickString(rec, 'routine') ??
-        pickString(rec, 'severity');
+      const dbErrorHint: string | undefined =
+        getStringProp(r, 'syscall') ??
+        getStringProp(r, 'reason') ??
+        getStringProp(r, 'routine') ??
+        getStringProp(r, 'severity');
 
-      const rawMsg = safeMessage(err);
+      const rawMsg = toSafeMessage(e);
       const safeMsg = redactSecrets(rawMsg).slice(0, 180);
 
       return {
@@ -96,7 +75,7 @@ export class AppController {
         service: 'cuceiverse-backend',
         db: 'disconnected',
         timestamp,
-        ...(release ? { release } : {}),
+        release: process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? undefined,
         dbErrorCode,
         ...(dbErrorHint ? { dbErrorHint } : {}),
         ...(isProd ? { dbErrorMessage: safeMsg } : { error: safeMsg }),
@@ -105,7 +84,7 @@ export class AppController {
   }
 
   @Get()
-  root(): string {
+  root() {
     return 'OK';
   }
 }
