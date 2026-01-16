@@ -16,6 +16,9 @@ jobs:
     name: backend (lint/build)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/cuceiverse_ci?schema=publicgit checkout ci/minimal-ci
+
 
     steps:
       - name: Checkout
