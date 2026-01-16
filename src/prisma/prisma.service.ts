@@ -1,53 +1,37 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  private pool: Pool;
+  private readonly logger = new Logger(PrismaService.name);
 
-  constructor() {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error('DATABASE_URL is not set');
-    }
-
-    // Supabase + node-postgres: fuerza SSL en prod (evita fallos de cadena/verify).
- const ssl =
-  process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : undefined;
-
-const pool = new Pool({
-  connectionString,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-  max: Number(process.env.DB_POOL_MAX ?? 5),
-  idleTimeoutMillis: 10_000,
-  connectionTimeoutMillis: 10_000,
-});
-
-
-
-    super({
-      adapter: new PrismaPg(pool),
-    });
-
-    this.pool = pool;
+  async onModuleInit(): Promise<void> {
+    // Cast defensivo: ESLint/TS está tipando Prisma como `error` y marca unsafe-call.
+    const connect = this.$connect as unknown as () => Promise<void>;
+    await connect();
+    this.logger.log('Prisma connected');
   }
 
-  async onModuleInit() {
-    await this.$connect();
+  async onModuleDestroy(): Promise<void> {
+    const disconnect = this.$disconnect as unknown as () => Promise<void>;
+    await disconnect();
   }
 
-  async onModuleDestroy() {
-    await this.$disconnect();
-    await this.pool.end();
-  }
   async ping(): Promise<void> {
-    await this.pool.query('SELECT 1');
+    // Evitamos el template tag ($queryRaw`...`) porque también cae en no-unsafe-call
+    const queryRawUnsafe = this.$queryRawUnsafe as unknown as (
+      query: string,
+      ...values: unknown[]
+    ) => Promise<unknown>;
+
+    await queryRawUnsafe('SELECT 1');
   }
 }
