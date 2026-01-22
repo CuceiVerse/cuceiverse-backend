@@ -1,37 +1,57 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { PrismaClient } from '../generated/prisma';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  private readonly logger = new Logger(PrismaService.name);
+  private readonly pool: Pool;
+
+  constructor() {
+    const connectionString = process.env.DATABASE_URL;
+
+    if (!connectionString) {
+      // Falla explícita y entendible (evita el error críptico de Prisma)
+      throw new Error('DATABASE_URL is required to initialize PrismaClient');
+    }
+
+    // Supabase (pooler) típicamente requiere TLS; sin sslmode en la URL,
+    // forzamos SSL cuando detectamos supabase.com o si DATABASE_SSL=true.
+    const useSsl =
+      process.env.DATABASE_SSL === 'true' ||
+      /supabase\.com/i.test(connectionString);
+
+    const pool = new Pool({
+      connectionString,
+      ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+    });
+
+    super({
+      adapter: new PrismaPg(pool),
+      // Si quieres logs, actívalos después; primero dejemos que arranque estable.
+      // log: process.env.NODE_ENV === 'production' ? ['error'] : ['warn', 'error'],
+    });
+
+    this.pool = pool;
+  }
 
   async onModuleInit(): Promise<void> {
-    // Cast defensivo: ESLint/TS está tipando Prisma como `error` y marca unsafe-call.
-    const connect = this.$connect as unknown as () => Promise<void>;
-    await connect();
-    this.logger.log('Prisma connected');
+    await this.$connect();
   }
 
   async onModuleDestroy(): Promise<void> {
-    const disconnect = this.$disconnect as unknown as () => Promise<void>;
-    await disconnect();
+    await this.$disconnect();
+    await this.pool.end();
   }
 
+  /**
+   * Health ping: query mínima para validar conectividad.
+   * No depende de modelos; solo requiere conexión viva.
+   */
   async ping(): Promise<void> {
-    // Evitamos el template tag ($queryRaw`...`) porque también cae en no-unsafe-call
-    const queryRawUnsafe = this.$queryRawUnsafe as unknown as (
-      query: string,
-      ...values: unknown[]
-    ) => Promise<unknown>;
-
-    await queryRawUnsafe('SELECT 1');
+    await this.$queryRaw`SELECT 1`;
   }
 }

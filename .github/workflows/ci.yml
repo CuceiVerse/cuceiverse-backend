@@ -16,6 +16,9 @@ jobs:
     name: backend (lint/build)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
+      DATABASE_SSL: "false"
 
     steps:
       - name: Checkout
@@ -29,6 +32,9 @@ jobs:
 
       - name: Install
         run: npm ci
+      
+      - name: Prisma generate
+        run: npm run db:generate
 
       - name: Validate required scripts
         run: |
