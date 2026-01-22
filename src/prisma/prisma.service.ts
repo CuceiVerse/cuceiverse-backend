@@ -21,7 +21,8 @@ export class PrismaService
     // Supabase (pooler) típicamente requiere TLS; sin sslmode en la URL,
     // forzamos SSL cuando detectamos supabase.com o si DATABASE_SSL=true.
     const useSsl =
-      process.env.DATABASE_SSL === 'true' || /supabase\.com/i.test(connectionString);
+      process.env.DATABASE_SSL === 'true' ||
+      /supabase\.com/i.test(connectionString);
 
     const pool = new Pool({
       connectionString,

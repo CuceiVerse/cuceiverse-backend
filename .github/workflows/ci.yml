@@ -17,7 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/cuceiverse_ci?schema=publicgit checkout ci/minimal-ci
+      DATABASE_URL: postgresql://user:pass@localhost:5432/db
+      DATABASE_SSL: "false"
 
     steps:
       - name: Checkout
