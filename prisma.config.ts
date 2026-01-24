@@ -1,9 +1,14 @@
 import 'dotenv/config';
-import { defineConfig, env } from 'prisma/config';
+import { defineConfig } from 'prisma/config';
 
-type Env = {
-  DATABASE_URL: string;
-};
+const pooledUrl = process.env.DATABASE_URL;
+const directUrl = process.env.DIRECT_URL;
+
+const url = directUrl ?? pooledUrl;
+
+if (!url) {
+  throw new Error('Missing DATABASE_URL (and optionally DIRECT_URL).');
+}
 
 const shadowDatabaseUrl = process.env.SHADOW_DATABASE_URL;
 
@@ -11,7 +16,7 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: { path: 'prisma/migrations' },
   datasource: {
-    url: env<Env>('DATABASE_URL'),
-    ...(shadowDatabaseUrl && { shadowDatabaseUrl }),
+    url,
+    ...(shadowDatabaseUrl ? { shadowDatabaseUrl } : {}),
   },
 });
