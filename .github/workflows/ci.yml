@@ -34,11 +34,14 @@ jobs:
         run: npm ci
       
       - name: Prisma generate
-        run: npm run db:generate
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/postgres
+
 
       - name: Validate required scripts
         run: |
-          node -e "const s=require('./package.json').scripts||{}; ['lint','build'].forEach(k=>{if(!s[k]){console.error('Missing npm script: '+k); process.exit(1)}})"
+            node -e "const s=require('./package.json').scripts||{}; ['lint','build'].forEach(k=>{if(!s[k]){console.error('Missing npm script: '+k); process.exit(1)}})"
 
       - name: Lint
         run: npm run lint
