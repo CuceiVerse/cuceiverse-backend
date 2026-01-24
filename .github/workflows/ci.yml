@@ -47,4 +47,9 @@ jobs:
         run: npm run lint
 
       - name: Build
-        run: npm run build
+        run: npm run build  
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
