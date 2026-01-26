@@ -1,53 +1,42 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Pool } from 'pg';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { PrismaClient } from '../generated/prisma';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client';
+import { Pool, type PoolConfig } from 'pg';
+
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`${name} is required`);
+  return v;
+}
 
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  private pool: Pool;
-
   constructor() {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error('DATABASE_URL is not set');
-    }
+    const connectionString = requireEnv('DATABASE_URL');
 
-    // Supabase + node-postgres: fuerza SSL en prod (evita fallos de cadena/verify).
- const ssl =
-  process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : undefined;
+    const ssl: PoolConfig['ssl'] | undefined =
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : undefined;
 
-const pool = new Pool({
-  connectionString,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-  max: Number(process.env.DB_POOL_MAX ?? 5),
-  idleTimeoutMillis: 10_000,
-  connectionTimeoutMillis: 10_000,
-});
+    const pool = new Pool({ connectionString, ssl });
+    const adapter = new PrismaPg(pool);
 
-
-
-    super({
-      adapter: new PrismaPg(pool),
-    });
-
-    this.pool = pool;
+    super({ adapter });
   }
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     await this.$connect();
   }
 
-  async onModuleDestroy() {
+  async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
-    await this.pool.end();
   }
+
   async ping(): Promise<void> {
-    await this.pool.query('SELECT 1');
+    await this.$queryRaw`SELECT 1`;
   }
 }
