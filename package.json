@@ -5,7 +5,7 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
-    "overrides": {
+  "overrides": {
     "lodash": "4.17.23"
   },
   "scripts": {
@@ -79,5 +79,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "engines": {
+    "node": ">=20 <21"
   }
 }
