@@ -10,6 +10,7 @@ datasource db {
 model User {
   id          String   @id @default(uuid())
   siiauCode   String   @unique
+  passwordHash String
   displayName String?
   avatarUrl   String?
   createdAt   DateTime @default(now())
@@ -17,3 +18,4 @@ model User {
 
   @@map("users")
 }
+
