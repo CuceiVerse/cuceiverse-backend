@@ -1,15 +1,19 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '@nestjs/jwt';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { JwtService } from '@nestjs/jwt';
 
-function publicUser(u: any) {
-  const { passwordHash, ...rest } = u;
-  return rest;
-}
+import * as bcrypt from 'bcrypt';
+
+import { PrismaService } from '../prisma/prisma.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { publicUserSelect, type PublicUser } from './auth.types';
+
+type UserIdAndCode = Pick<PublicUser, 'id' | 'siiauCode'>;
 
 @Injectable()
 export class AuthService {
@@ -19,8 +23,10 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  private async signAccessToken(user: { id: string; siiauCode: string }) {
-    const expiresIn = this.config.get<string>('JWT_EXPIRES_IN') ?? '7d';
+  private async signAccessToken(user: UserIdAndCode): Promise<string> {
+    const raw = this.config.get<string>('JWT_EXPIRES_IN') ?? '7d';
+    const expiresIn = /^\d+$/.test(raw) ? Number(raw) : raw; // string | number
+
     return this.jwt.signAsync(
       { sub: user.id, siiauCode: user.siiauCode },
       { expiresIn },
@@ -42,22 +48,37 @@ export class AuthService {
         passwordHash,
         displayName: dto.displayName,
       },
+      select: publicUserSelect,
     });
 
     const accessToken = await this.signAccessToken(user);
-    return { accessToken, user: publicUser(user) };
+    return { accessToken, user };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
+    const userWithPassword = await this.prisma.user.findUnique({
       where: { siiauCode: dto.siiauCode },
+      select: { ...publicUserSelect, passwordHash: true },
     });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!userWithPassword)
+      throw new UnauthorizedException('Invalid credentials');
 
-    const ok = await bcrypt.compare(dto.password, user.passwordHash);
+    const ok = await bcrypt.compare(
+      dto.password,
+      userWithPassword.passwordHash,
+    );
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
+    const user: PublicUser = {
+      id: userWithPassword.id,
+      siiauCode: userWithPassword.siiauCode,
+      displayName: userWithPassword.displayName,
+      avatarUrl: userWithPassword.avatarUrl,
+      createdAt: userWithPassword.createdAt,
+      updatedAt: userWithPassword.updatedAt,
+    };
+
     const accessToken = await this.signAccessToken(user);
-    return { accessToken, user: publicUser(user) };
+    return { accessToken, user };
   }
 }
