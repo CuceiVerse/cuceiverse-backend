@@ -35,4 +35,11 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+  // Bloque agregado: Apaga la regla específicamente para tus archivos de pruebas
+  {
+    files: ['test/**/*.e2e-spec.ts'], 
+    rules: {
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  }
 );
