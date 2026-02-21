@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+
 
 type ReqUser = { userId: string; siiauCode: string };
 
@@ -23,9 +23,10 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async me(@Req() req: Request) {
-    const u = req.user as ReqUser;
-    return this.auth.me(u.userId);
+
+
+  me(@Req() req: any) {
+    return req.user;
   }
 }
 
