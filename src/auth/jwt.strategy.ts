@@ -4,7 +4,12 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
-type JwtPayload = { sub: string; siiauCode: string; iat?: number; exp?: number };
+type JwtPayload = {
+  sub: string;
+  siiauCode: string;
+  iat?: number;
+  exp?: number;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
