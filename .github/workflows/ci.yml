@@ -13,11 +13,27 @@ concurrency:
 
 jobs:
   backend:
-    name: backend (lint/build)
+    name: backend (lint/build/e2e)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     env:
-      DATABASE_URL: postgresql://user:pass@localhost:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
       DATABASE_SSL: "false"
 
     steps:
@@ -44,10 +60,20 @@ jobs:
 
       - name: Validate required scripts
         run: |
-          node -e "const s=require('./package.json').scripts||{}; ['lint','build'].forEach(k=>{if(!s[k]){console.error('Missing npm script: '+k); process.exit(1)}})"
+          node -e "const s=require('./package.json').scripts||{}; ['lint','build','test:e2e'].forEach(k=>{if(!s[k]){console.error('Missing npm script: '+k); process.exit(1)}})"
 
       - name: Prisma generate
         run: npx prisma generate
+
+      - name: Migrate DB
+        run: npx prisma migrate deploy
+
+      - name: E2E tests
+        run: npm run test:e2e
+        env:
+          JWT_SECRET: test-secret
+          JWT_EXPIRES_IN: 7d
+          BCRYPT_SALT_ROUNDS: "10"
 
       - name: Lint
         run: npm run lint

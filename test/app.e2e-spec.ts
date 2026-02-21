@@ -1,25 +1,40 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+
+import { AppModule } from '../src/app.module';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
+  let prisma: PrismaService;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+  beforeAll(async () => {
+    // para que JwtModule/JwtStrategy no revienten si se inicializan
+    process.env.JWT_SECRET ??= 'test-secret';
+    process.env.JWT_EXPIRES_IN ??= '7d';
+
+    const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleRef.createNestApplication();
     await app.init();
+
+    prisma = app.get(PrismaService);
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    // cierra conexiones abiertas (evita "open handles")
+    await prisma.$disconnect();
+    await app.close();
+  });
+
+  it('/ (GET) -> OK', async () => {
+    await request(app.getHttpServer()).get('/').expect(200).expect('OK');
+  });
+
+  it('/health (GET) -> 200', async () => {
+    await request(app.getHttpServer()).get('/health').expect(200);
   });
 });
