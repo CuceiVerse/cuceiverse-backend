@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import type { StringValue } from 'ms';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -40,7 +41,11 @@ export class AuthService {
   ) {}
 
   private async signAccessToken(user: UserIdAndCode): Promise<string> {
-    const expiresIn = this.config.get<string>('JWT_EXPIRES_IN') ?? '7d';
+    const expiresInRaw = this.config.get<string>('JWT_EXPIRES_IN');
+    const expiresIn =
+      expiresInRaw && /^\d+$/.test(expiresInRaw)
+        ? Number(expiresInRaw)
+        : ((expiresInRaw ?? '7d') as StringValue);
     return this.jwt.signAsync(
       { sub: user.id, siiauCode: user.siiauCode },
       { expiresIn },
