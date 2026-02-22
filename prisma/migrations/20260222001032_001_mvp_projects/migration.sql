@@ -11,9 +11,29 @@ CREATE TYPE "ProjectStatus" AS ENUM ('PLANNING', 'ACTIVE', 'PAUSED', 'DONE');
 -- CreateEnum
 CREATE TYPE "ProjectRole" AS ENUM ('PROJECT_MANAGER', 'UX_UI_DESIGNER', 'BACKEND_DEVELOPER', 'FULLSTACK_DEVELOPER', 'QA_TESTER', 'PROFESOR');
 
--- AlterTable
-ALTER TABLE "users" DROP COLUMN "passwordHash",
-ADD COLUMN     "password_hash" TEXT NOT NULL;
+-- Reconcile users password hash column safely (idempotent)
+DO $$
+BEGIN
+  -- If old passwordHash exists and password_hash doesn't, rename it.
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='users' AND column_name='passwordHash'
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='users' AND column_name='password_hash'
+  ) THEN
+    EXECUTE 'ALTER TABLE "users" RENAME COLUMN "passwordHash" TO "password_hash"';
+  END IF;
+
+  -- If neither exists (unlikely), create nullable column first, then optionally backfill later.
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='users' AND column_name='password_hash'
+  ) THEN
+    EXECUTE 'ALTER TABLE "users" ADD COLUMN "password_hash" TEXT';
+  END IF;
+END $$;
 
 -- CreateTable
 CREATE TABLE "projects" (
