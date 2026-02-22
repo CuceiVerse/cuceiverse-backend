@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id           String          @id @default(uuid())
-  siiauCode    String          @unique
-  passwordHash String          @map("password_hash")
-  displayName  String?
-  avatarUrl    String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id           String   @id @default(uuid())
+  siiauCode    String   @unique @map("siiau_code")
+  passwordHash String   @map("password_hash")
+  displayName  String?  @map("display_name")
+  avatarUrl    String?  @map("avatar_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
   memberships  ProjectMember[]
 
   @@map("users")
@@ -41,25 +42,25 @@ model Project {
   name        String
   description String?
   status      ProjectStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  members ProjectMember[]
+  members     ProjectMember[]
 
   @@index([status])
   @@map("projects")
 }
 
 model ProjectMember {
-  id        String      @id @default(uuid())
-  projectId String      @map("project_id")
-  userId    String      @map("user_id")
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
   role      ProjectRole
-  isAdmin   Boolean     @default(false) @map("is_admin")
-  createdAt DateTime    @default(now()) @map("created_at")
+  isAdmin   Boolean  @default(false) @map("is_admin")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
   @@index([userId])
