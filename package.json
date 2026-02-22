@@ -20,6 +20,7 @@
     "test": "jest",
     "dev": "prisma generate && npm run copy:generated && npm run start:dev",
     "db:generate": "prisma generate",
+    "db:seed": "node prisma/seed.mjs",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand"
