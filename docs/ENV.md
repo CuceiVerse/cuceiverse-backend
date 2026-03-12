@@ -48,15 +48,24 @@ Rounds para bcrypt.
 
 ---
 
-## Seed (safe)
+## Seed
 
-El seed **solo corre** si se definen estas variables.
+El seed del backend ahora tiene dos partes:
+
+- **Admin demo**: opcional, solo corre si defines credenciales.
+- **POIs del mapa**: corre por defecto para poblar el MVP del campus.
 
 ### SEED_ADMIN_CODE
 SIIAU code del usuario admin seed (ej. `admin01`).
 
 ### SEED_ADMIN_PASSWORD
 Password del usuario admin seed (ej. `123456`).
+
+### SEED_SKIP_POIS
+Si vale `true`, omite la siembra inicial de `puntos_interes`.
+
+- Default: `false`
+- Uso recomendado: dejarlo vacío en local para tener POIs del mapa desde el arranque.
 
 ---
 
@@ -81,7 +90,8 @@ JWT_EXPIRES_IN="7d"
 BCRYPT_SALT_ROUNDS="10"
 
 # ----------------------------
-# Seeds (safe: only runs if set)
+# Seeds
 # ----------------------------
 SEED_ADMIN_CODE=""
 SEED_ADMIN_PASSWORD=""
+SEED_SKIP_POIS="false"

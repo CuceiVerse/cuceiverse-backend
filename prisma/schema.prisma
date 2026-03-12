@@ -37,6 +37,19 @@ enum ProjectRole {
   PROFESOR
 }
 
+enum PuntoInteresTipo {
+  FOOD
+  MEDICAL
+  BATHROOM
+  CAFETERIA
+  GENERAL_SERVICES
+  AUDITORIUM
+  BANK
+  LIBRARY
+  INFO
+  ADMIN
+}
+
 model Project {
   id          String        @id @default(uuid())
   name        String
@@ -65,4 +78,23 @@ model ProjectMember {
   @@unique([projectId, userId])
   @@index([userId])
   @@map("project_members")
+}
+
+model PuntoInteres {
+  id                 String           @id @default(uuid())
+  nombre             String
+  tipo               PuntoInteresTipo
+  coordenadaXGrid    Int              @map("coordenada_x_grid")
+  coordenadaYGrid    Int              @map("coordenada_y_grid")
+  descripcion        String?
+  activo             Boolean          @default(true)
+  edificioReferencia String?          @map("edificio_referencia")
+  prioridadVisual    Int              @default(0) @map("prioridad_visual")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  @@index([tipo, activo])
+  @@index([edificioReferencia])
+  @@index([prioridadVisual])
+  @@map("puntos_interes")
 }
