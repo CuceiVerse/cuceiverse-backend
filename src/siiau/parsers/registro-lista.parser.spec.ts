@@ -1,7 +1,7 @@
-import { parseRegistroLista } from "./registro-lista.parser";
+import { parseRegistroLista } from './registro-lista.parser';
 
-describe("parseRegistroLista", () => {
-  it("parses minimal registro lista table", () => {
+describe('parseRegistroLista', () => {
+  it('parses minimal registro lista table', () => {
     const html = `
       <html><body>
         <table>
@@ -14,7 +14,7 @@ describe("parseRegistroLista", () => {
 
     const { courses } = parseRegistroLista(html);
     expect(courses).toHaveLength(2);
-    expect(courses[0].nrc).toBe("124873");
+    expect(courses[0].nrc).toBe('124873');
     expect(courses[0].creditos).toBe(8);
   });
 });
