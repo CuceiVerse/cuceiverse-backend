@@ -1,3 +1,6 @@
+process.env.SIIAU_MODE = "fixture";
+process.env.SIIAU_FIXTURE_PATH = require("node:path").resolve(process.cwd(), "test", "fixtures", "siiau", "resultado_horario.json");
+
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
