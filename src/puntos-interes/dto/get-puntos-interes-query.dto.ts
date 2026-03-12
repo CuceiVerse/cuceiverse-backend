@@ -21,7 +21,7 @@ function toOptionalTrimmedString(value: unknown): string | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function toOptionalBoolean(value: unknown): boolean | undefined | unknown {
+function toOptionalBoolean(value: unknown): unknown {
   if (typeof value === 'boolean') return value;
   if (typeof value !== 'string') return undefined;
 
@@ -33,7 +33,7 @@ function toOptionalBoolean(value: unknown): boolean | undefined | unknown {
   return value;
 }
 
-function toOptionalInteger(value: unknown): number | undefined | unknown {
+function toOptionalInteger(value: unknown): unknown {
   if (typeof value === 'number') return value;
   if (typeof value !== 'string') return undefined;
 
