@@ -1,16 +1,22 @@
 import { PuntoInteresTipo } from '../generated/prisma';
 
 export const puntoInteresTypeMap = {
-  food: PuntoInteresTipo.FOOD,
-  medical: PuntoInteresTipo.MEDICAL,
-  bathroom: PuntoInteresTipo.BATHROOM,
-  cafeteria: PuntoInteresTipo.CAFETERIA,
-  general_services: PuntoInteresTipo.GENERAL_SERVICES,
-  auditorium: PuntoInteresTipo.AUDITORIUM,
-  bank: PuntoInteresTipo.BANK,
-  library: PuntoInteresTipo.LIBRARY,
-  info: PuntoInteresTipo.INFO,
-  admin: PuntoInteresTipo.ADMIN,
+  bathroom: PuntoInteresTipo.BANOS,
+  banos: PuntoInteresTipo.BANOS,
+  cafeteria: PuntoInteresTipo.CAFETERIAS,
+  food: PuntoInteresTipo.CAFETERIAS,
+  control_escolar: PuntoInteresTipo.CONTROL_ESCOLAR,
+  medical: PuntoInteresTipo.MEDICO,
+  medico: PuntoInteresTipo.MEDICO,
+  papelerias: PuntoInteresTipo.PAPELERIAS,
+  general_services: PuntoInteresTipo.PAPELERIAS,
+  cajero_santander: PuntoInteresTipo.CAJERO_SANTANDER,
+  bank: PuntoInteresTipo.CAJERO_SANTANDER,
+  auditorium: PuntoInteresTipo.AUDITORIOS,
+  auditorios: PuntoInteresTipo.AUDITORIOS,
+  admin: PuntoInteresTipo.CONTROL_ESCOLAR,
+  info: PuntoInteresTipo.CONTROL_ESCOLAR,
+  library: PuntoInteresTipo.CONTROL_ESCOLAR,
 } as const;
 
 export type PuntoInteresTypeSlug = keyof typeof puntoInteresTypeMap;
@@ -28,9 +34,17 @@ export function toPuntoInteresTipo(
 export function fromPuntoInteresTipo(
   tipo: PuntoInteresTipo,
 ): PuntoInteresTypeSlug {
-  const found = puntoInteresTypeSlugs.find(
-    (slug) => puntoInteresTypeMap[slug] === tipo,
-  );
+  const canonicalByType: Record<PuntoInteresTipo, PuntoInteresTypeSlug> = {
+    [PuntoInteresTipo.BANOS]: 'bathroom',
+    [PuntoInteresTipo.CAFETERIAS]: 'cafeteria',
+    [PuntoInteresTipo.CONTROL_ESCOLAR]: 'admin',
+    [PuntoInteresTipo.MEDICO]: 'medical',
+    [PuntoInteresTipo.PAPELERIAS]: 'general_services',
+    [PuntoInteresTipo.CAJERO_SANTANDER]: 'bank',
+    [PuntoInteresTipo.AUDITORIOS]: 'auditorium',
+  };
+
+  const found = canonicalByType[tipo];
 
   if (!found) {
     throw new Error(`Unsupported PuntoInteresTipo: ${tipo}`);
