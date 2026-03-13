@@ -17,6 +17,7 @@ type PuntoInteresResponse = {
   descripcion: string | null;
   activo: boolean;
   edificioReferencia: string | null;
+  nearestPathNodeId: string | null;
   prioridadVisual: number;
 };
 
@@ -55,6 +56,7 @@ export class PuntosInteresService {
         descripcion: punto.descripcion,
         activo: punto.activo,
         edificioReferencia: punto.edificioReferencia,
+        nearestPathNodeId: punto.nearestPathNodeId,
         prioridadVisual: punto.prioridadVisual,
       })),
       meta: {

@@ -13,6 +13,7 @@ model User {
   passwordHash String   @map("password_hash")
   displayName  String?  @map("display_name")
   avatarUrl    String?  @map("avatar_url")
+  isAdmin      Boolean  @default(false) @map("is_admin")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -37,17 +38,47 @@ enum ProjectRole {
   PROFESOR
 }
 
+enum CampusZona {
+  SUR
+  CENTRAL
+  NOROESTE
+  ESTE_NORESTE
+  DEPORTIVA
+}
+
+enum EdificioTipo {
+  EDIFICIO_ACADEMICO
+  ZONA_CLAVE
+  INSTALACION_DEPORTIVA
+  SERVICIO
+  LANDMARK
+}
+
+enum CampusAreaTipo {
+  PERIMETRO_CAMPUS
+  JARDIN
+  EXPLANADA
+  PASILLO_PEATONAL
+  AREA_DEPORTIVA
+  ESTACIONAMIENTO
+}
+
+enum CampusAssetTipo {
+  ARBOL
+  ARBUSTO
+  BANCA
+  LUMINARIA
+  BASURERO
+}
+
 enum PuntoInteresTipo {
-  FOOD
-  MEDICAL
-  BATHROOM
-  CAFETERIA
-  GENERAL_SERVICES
-  AUDITORIUM
-  BANK
-  LIBRARY
-  INFO
-  ADMIN
+  BANOS
+  CAFETERIAS
+  CONTROL_ESCOLAR
+  MEDICO
+  PAPELERIAS
+  CAJERO_SANTANDER
+  AUDITORIOS
 }
 
 model Project {
@@ -80,6 +111,24 @@ model ProjectMember {
   @@map("project_members")
 }
 
+model Edificio {
+  id          String       @id @default(uuid())
+  codigo      String       @unique
+  nombre      String
+  tipo        EdificioTipo
+  zona        CampusZona
+  boundingBox Json         @map("bounding_box")
+  centroidX   Int?         @map("centroid_x")
+  centroidY   Int?         @map("centroid_y")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  puntosInteres PuntoInteres[]
+
+  @@index([zona, tipo])
+  @@map("edificios")
+}
+
 model PuntoInteres {
   id                 String           @id @default(uuid())
   nombre             String
@@ -88,13 +137,91 @@ model PuntoInteres {
   coordenadaYGrid    Int              @map("coordenada_y_grid")
   descripcion        String?
   activo             Boolean          @default(true)
+  edificioId         String?          @map("edificio_id")
   edificioReferencia String?          @map("edificio_referencia")
+  nearestPathNodeId  String?          @map("nearest_path_node_id")
   prioridadVisual    Int              @default(0) @map("prioridad_visual")
   createdAt          DateTime         @default(now()) @map("created_at")
   updatedAt          DateTime         @updatedAt @map("updated_at")
 
+  edificio           Edificio?        @relation(fields: [edificioId], references: [id], onDelete: SetNull)
+  nearestPathNode    PathNode?        @relation("poi_nearest_path_node", fields: [nearestPathNodeId], references: [id], onDelete: SetNull)
+
   @@index([tipo, activo])
+  @@index([edificioId])
   @@index([edificioReferencia])
+  @@index([nearestPathNodeId])
   @@index([prioridadVisual])
   @@map("puntos_interes")
+}
+
+model PathNode {
+  id        String     @id @default(uuid())
+  coordX    Int        @map("coord_x")
+  coordY    Int        @map("coord_y")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  nearestPois PuntoInteres[] @relation("poi_nearest_path_node")
+  nearestAssets CampusAsset[] @relation("asset_nearest_path_node")
+  edgesA      PathEdge[]     @relation("path_edge_a")
+  edgesB      PathEdge[]     @relation("path_edge_b")
+
+  @@unique([coordX, coordY])
+  @@map("path_nodes")
+}
+
+model CampusArea {
+  id          String         @id @default(uuid())
+  codigo      String         @unique
+  nombre      String
+  tipo        CampusAreaTipo
+  boundingBox Json           @map("bounding_box")
+  centroidX   Int?           @map("centroid_x")
+  centroidY   Int?           @map("centroid_y")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  assets      CampusAsset[]
+
+  @@index([tipo])
+  @@map("campus_areas")
+}
+
+model CampusAsset {
+  id                String          @id @default(uuid())
+  tipo              CampusAssetTipo
+  nombre            String?
+  coordX            Int             @map("coord_x")
+  coordY            Int             @map("coord_y")
+  orientacionDeg    Int?            @map("orientacion_deg")
+  metadata          Json?
+  areaId            String?         @map("area_id")
+  nearestPathNodeId String?         @map("nearest_path_node_id")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  area              CampusArea?     @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  nearestPathNode   PathNode?       @relation("asset_nearest_path_node", fields: [nearestPathNodeId], references: [id], onDelete: SetNull)
+
+  @@index([tipo])
+  @@index([areaId])
+  @@index([nearestPathNodeId])
+  @@unique([tipo, coordX, coordY])
+  @@map("campus_assets")
+}
+
+model PathEdge {
+  id      String   @id @default(uuid())
+  nodeAId String   @map("node_a_id")
+  nodeBId String   @map("node_b_id")
+  peso    Int      @default(1)
+
+  nodeA   PathNode @relation("path_edge_a", fields: [nodeAId], references: [id], onDelete: Cascade)
+  nodeB   PathNode @relation("path_edge_b", fields: [nodeBId], references: [id], onDelete: Cascade)
+
+  @@index([nodeAId])
+  @@index([nodeBId])
+  @@unique([nodeAId, nodeBId])
+  @@map("path_edges")
 }

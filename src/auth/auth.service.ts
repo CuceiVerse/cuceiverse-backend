@@ -17,6 +17,7 @@ type PublicUser = {
   siiauCode: string;
   displayName: string | null;
   avatarUrl: string | null;
+  isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -28,6 +29,7 @@ const publicUserSelect = {
   siiauCode: true,
   displayName: true,
   avatarUrl: true,
+  isAdmin: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -40,14 +42,16 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  private async signAccessToken(user: UserIdAndCode): Promise<string> {
+  private async signAccessToken(
+    user: UserIdAndCode & { isAdmin: boolean },
+  ): Promise<string> {
     const expiresInRaw = this.config.get<string>('JWT_EXPIRES_IN');
     const expiresIn =
       expiresInRaw && /^\d+$/.test(expiresInRaw)
         ? Number(expiresInRaw)
         : ((expiresInRaw ?? '7d') as StringValue);
     return this.jwt.signAsync(
-      { sub: user.id, siiauCode: user.siiauCode },
+      { sub: user.id, siiauCode: user.siiauCode, isAdmin: user.isAdmin },
       { expiresIn },
     );
   }
@@ -75,8 +79,39 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    const loginCode = dto.codigo.trim();
+    const loginNip = dto.nip;
+
+    const allowTestAdmin =
+      this.config.get<string>('NODE_ENV') !== 'production' &&
+      this.config.get<string>('AUTH_TEST_ADMIN_ENABLED') !== 'false';
+    const testAdminCode = this.config.get<string>('AUTH_TEST_ADMIN_CODE') ?? 'admin';
+    const testAdminNip = this.config.get<string>('AUTH_TEST_ADMIN_NIP') ?? 'admin123';
+
+    if (allowTestAdmin && loginCode === testAdminCode && loginNip === testAdminNip) {
+      const passwordHash = await bcrypt.hash(loginNip, 10);
+      const admin = (await this.prisma.user.upsert({
+        where: { siiauCode: loginCode },
+        update: {
+          passwordHash,
+          isAdmin: true,
+          displayName: 'Admin Pruebas',
+        },
+        create: {
+          siiauCode: loginCode,
+          passwordHash,
+          displayName: 'Admin Pruebas',
+          isAdmin: true,
+        },
+        select: publicUserSelect,
+      })) as PublicUser;
+
+      const accessToken = await this.signAccessToken(admin);
+      return { accessToken, user: admin };
+    }
+
     const userWithPassword = (await this.prisma.user.findUnique({
-      where: { siiauCode: dto.siiauCode },
+      where: { siiauCode: loginCode },
       select: { ...publicUserSelect, passwordHash: true },
     })) as (PublicUser & { passwordHash: string }) | null;
 
@@ -84,7 +119,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
 
     const ok = await bcrypt.compare(
-      dto.password,
+      loginNip,
       userWithPassword.passwordHash,
     );
     if (!ok) throw new UnauthorizedException('Invalid credentials');
@@ -94,6 +129,7 @@ export class AuthService {
       siiauCode: userWithPassword.siiauCode,
       displayName: userWithPassword.displayName,
       avatarUrl: userWithPassword.avatarUrl,
+      isAdmin: userWithPassword.isAdmin,
       createdAt: userWithPassword.createdAt,
       updatedAt: userWithPassword.updatedAt,
     };

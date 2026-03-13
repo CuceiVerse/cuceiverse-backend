@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { SiiauModule } from './siiau/siiau.module';
 import { PuntosInteresModule } from './puntos-interes/puntos-interes.module';
+import { MapaModule } from './mapa/mapa.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PuntosInteresModule } from './puntos-interes/puntos-interes.module';
     AuthModule,
     SiiauModule,
     PuntosInteresModule,
+    MapaModule,
   ],
   controllers: [AppController],
 })

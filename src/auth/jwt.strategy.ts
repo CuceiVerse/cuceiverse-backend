@@ -35,6 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         siiauCode: true,
         displayName: true,
         avatarUrl: true,
+        isAdmin: true,
         createdAt: true,
         updatedAt: true,
       },

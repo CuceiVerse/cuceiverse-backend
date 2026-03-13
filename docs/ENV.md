@@ -46,6 +46,22 @@ Rounds para bcrypt.
 - Default recomendado: `10`
 - Ejemplo: `12` (más costoso)
 
+### AUTH_TEST_ADMIN_ENABLED
+Habilita acceso admin temporal desde login (solo recomendado en desarrollo).
+
+- Default efectivo: `true` cuando `NODE_ENV != production`
+- Para deshabilitarlo explícitamente: `AUTH_TEST_ADMIN_ENABLED="false"`
+
+### AUTH_TEST_ADMIN_CODE
+Codigo de acceso para admin temporal en login.
+
+- Default: `admin`
+
+### AUTH_TEST_ADMIN_NIP
+NIP de acceso para admin temporal en login.
+
+- Default: `admin123`
+
 ---
 
 ## Seed
@@ -88,6 +104,13 @@ JWT_EXPIRES_IN="7d"
 # Bcrypt
 # ----------------------------
 BCRYPT_SALT_ROUNDS="10"
+
+# ----------------------------
+# Test Admin Login (dev only)
+# ----------------------------
+AUTH_TEST_ADMIN_ENABLED="true"
+AUTH_TEST_ADMIN_CODE="admin"
+AUTH_TEST_ADMIN_NIP="admin123"
 
 # ----------------------------
 # Seeds
